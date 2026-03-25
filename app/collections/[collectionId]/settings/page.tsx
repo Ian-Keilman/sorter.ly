@@ -2,7 +2,12 @@ import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Sidebar from "../../../components/Sidebar";
+
+/* v0.1.1 change here */
+import { updateCollection } from "../../../actions/collections";
 import { createField, deleteField } from "../../../actions/fields";
+
+
 import { db } from "../../../../db";
 import { collections, fields } from "../../../../db/schema";
 
@@ -55,6 +60,46 @@ export default async function CollectionSettingsPage({
         </header>
 
         <section className="page-content">
+          <div className="panel-card">
+            <h2 className="section-title">Collection</h2>
+
+            <form action={updateCollection} className="form-grid">
+              <input type="hidden" name="id" value={collectionId} />
+
+              <div className="field-block">
+                <label htmlFor="collection-name" className="field-label">
+                  Name
+                </label>
+                <input
+                  id="collection-name"
+                  name="name"
+                  type="text"
+                  className="text-input"
+                  defaultValue={collection.name}
+                  required
+                />
+              </div>
+
+              <div className="field-block">
+                <label htmlFor="collection-description" className="field-label">
+                  Description
+                </label>
+                <textarea
+                  id="collection-description"
+                  name="description"
+                  className="textarea-input"
+                  rows={4}
+                  defaultValue={collection.description ?? ""}
+                />
+              </div>
+
+              <div className="button-row">
+                <button type="submit" className="primary-button">
+                  Save Collection
+                </button>
+              </div>
+            </form>
+          </div>
           <div className="panel-card">
             <h2 className="section-title">Add Field</h2>
 

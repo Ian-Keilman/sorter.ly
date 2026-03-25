@@ -1,5 +1,62 @@
 "use server";
 
+export async function updateCollection(formData: FormData) {
+  const rawId = formData.get("id");
+  const rawName = formData.get("name");
+  const rawDescription = formData.get("description");
+
+  const id = typeof rawId === "string" ? rawId : "";
+  const name = typeof rawName === "string" ? rawName.trim() : "";
+  const description =
+    typeof rawDescription === "string" ? rawDescription.trim() : "";
+
+  if (!id || !name) {
+    return;
+  }
+
+  const current = db
+    .select()
+    .from(collections)
+    .where(eq(collections.id, id))
+    .all()[0];
+
+  if (!current) {
+    return;
+  }
+
+  const baseSlug = slugify(name);
+
+  const existingWithSlug = db
+    .select()
+    .from(collections)
+    .where(eq(collections.slug, baseSlug))
+    .all();
+
+  const slugTakenByOther = existingWithSlug.some(
+    (collection) => collection.id !== id
+  );
+
+  const nextSlug = slugTakenByOther
+    ? `${baseSlug}-${id.slice(0, 6)}`
+    : baseSlug;
+
+  db.update(collections)
+    .set({
+      name,
+      slug: nextSlug,
+      description: description || null,
+    })
+    .where(eq(collections.id, id))
+    .run();
+
+  revalidatePath("/");
+  revalidatePath(`/collections/${id}`);
+  revalidatePath(`/collections/${id}/settings`);
+  redirect(`/collections/${id}`);
+}
+
+
+
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";

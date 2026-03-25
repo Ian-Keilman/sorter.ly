@@ -544,3 +544,43 @@ button {
   background: white;
   padding: 10px 12px;
 }
+
+/* v0.1.1 */
+
+.brand {
+  color: #111827;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.brand:hover {
+  text-decoration: underline;
+}
+
+.home-collection-list {
+  display: grid;
+  gap: 12px;
+}
+
+.home-collection-card {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 14px;
+  text-decoration: none;
+  color: #111827;
+}
+
+.home-collection-card:hover {
+  background: #f3f4f6;
+}
+
+.home-collection-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.home-collection-meta {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
