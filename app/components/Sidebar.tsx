@@ -19,7 +19,9 @@ export default async function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="brand">sorter.ly</div>
+      <Link href="/" className = "brand">
+        sorter.ly
+      </Link>
 
       <Link href="/" className="new-button-link">
         + New Collection
