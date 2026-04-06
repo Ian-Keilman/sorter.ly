@@ -24,7 +24,7 @@ This one:
 - is customizable
 - supports CSV import/export (files often used in Excel and Sheets)
 
-Things like collaboration, storing data in the cloud, and iOS and Android support are currently out of the scope for v0.1.0.
+Things like collaboration, storing data in the cloud, and iOS and Android support are currently out of the scope for v0.1.1.
 
 ## Tech Stack
 
