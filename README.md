@@ -38,3 +38,5 @@ Things like collaboration, storing data in the cloud, and iOS and Android suppor
 
 - See INSTALLATIONGUIDE.md for instructions on how to install
 - See HOWTOUSE.md for instructions on how to use
+
+##### v0.1.1
