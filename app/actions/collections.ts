@@ -1,5 +1,11 @@
 "use server";
 
+import { eq, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { db } from "../../db";
+import { collections } from "../../db/schema";
+
 export async function updateCollection(formData: FormData) {
   const rawId = formData.get("id");
   const rawName = formData.get("name");
@@ -45,6 +51,7 @@ export async function updateCollection(formData: FormData) {
       name,
       slug: nextSlug,
       description: description || null,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .where(eq(collections.id, id))
     .run();
@@ -54,14 +61,6 @@ export async function updateCollection(formData: FormData) {
   revalidatePath(`/collections/${id}/settings`);
   redirect(`/collections/${id}`);
 }
-
-
-
-import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { db } from "../../db";
-import { collections } from "../../db/schema";
 
 function slugify(value: string) {
   const base = value

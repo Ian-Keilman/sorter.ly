@@ -1,5 +1,7 @@
 # sorter.ly
 
+**Current version: v0.1.1**
+
 ## About
 
 Locally-stored, highly customizable database manager
@@ -39,4 +41,9 @@ Things like collaboration, storing data in the cloud, and iOS and Android suppor
 - See INSTALLATIONGUIDE.md for instructions on how to install
 - See HOWTOUSE.md for instructions on how to use
 
-##### v0.1.1
+## v0.1.1
+
+- Rename collections and edit their descriptions
+- Return home by clicking the sorter.ly brand
+- View collection, field, and record totals on the home page
+- Safer destructive actions and more reliable CSV imports

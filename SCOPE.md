@@ -37,3 +37,19 @@
 #### v1.1.0
 
 - AI, someday
+
+## Platform direction
+
+- Keep the current Next.js and SQLite application focused on a dependable local desktop experience throughout v0.1.x.
+- Before native packaging, move collection and record rules behind a small platform-neutral data layer. The UI should not need to know whether data comes from the current Next.js server actions or a native SQLite adapter.
+- Evaluate Tauri 2 with its SQLite plugin for a shared macOS and iOS application. This is a candidate, not a commitment; the current server-action architecture cannot be packaged as a static mobile app without that separation work.
+- Treat multi-device sync as a separate feature from device compatibility. A native app should remain useful and private with no account or network connection.
+
+## Future update suggestions
+
+- Add import preview, validation results, and a clear summary before changing a collection.
+- Add automatic local backups plus trash or undo before expanding destructive editing.
+- Allow fields to be renamed, reordered, and safely converted between compatible types.
+- Add saved filters and views, then pagination or virtualization for large collections.
+- Define a versioned sorter.ly interchange format that includes field definitions as well as records.
+- Define sync conflict rules and encryption before adding accounts or cloud storage.

@@ -159,12 +159,24 @@ export async function importCsv(formData: FormData) {
     return;
   }
 
+  const usedHeaderLabels = new Set<string>();
+
   const headers = rawHeaders.map((header, index) => {
     const trimmed = header.trim();
-    return trimmed !== "" ? trimmed : `Column ${index + 1}`;
+    const label = trimmed !== "" ? trimmed : `Column ${index + 1}`;
+    let uniqueLabel = label;
+    let suffix = 2;
+
+    while (usedHeaderLabels.has(normalizeLabel(uniqueLabel))) {
+      uniqueLabel = `${label} ${suffix}`;
+      suffix += 1;
+    }
+
+    usedHeaderLabels.add(normalizeLabel(uniqueLabel));
+    return uniqueLabel;
   });
 
-  let fieldRows = db
+  const fieldRows = db
     .select()
     .from(fields)
     .where(eq(fields.collectionId, collectionId))
@@ -210,17 +222,6 @@ export async function importCsv(formData: FormData) {
     nextPosition += 1;
     newFields.push(newField);
     headerFieldMap.set(i, newField as typeof fields.$inferSelect);
-  }
-
-  if (newFields.length > 0) {
-    db.insert(fields).values(newFields).run();
-
-    fieldRows = db
-      .select()
-      .from(fields)
-      .where(eq(fields.collectionId, collectionId))
-      .orderBy(asc(fields.position))
-      .all();
   }
 
   const recordsToInsert: typeof records.$inferInsert[] = [];
@@ -300,13 +301,19 @@ export async function importCsv(formData: FormData) {
     }
   }
 
-  if (recordsToInsert.length > 0) {
-    db.insert(records).values(recordsToInsert).run();
-  }
+  db.transaction((tx) => {
+    if (newFields.length > 0) {
+      tx.insert(fields).values(newFields).run();
+    }
 
-  if (valuesToInsert.length > 0) {
-    db.insert(recordValues).values(valuesToInsert).run();
-  }
+    if (recordsToInsert.length > 0) {
+      tx.insert(records).values(recordsToInsert).run();
+    }
+
+    if (valuesToInsert.length > 0) {
+      tx.insert(recordValues).values(valuesToInsert).run();
+    }
+  });
 
   revalidatePath(`/collections/${collectionId}`);
   revalidatePath(`/collections/${collectionId}/settings`);

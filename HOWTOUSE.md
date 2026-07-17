@@ -8,6 +8,10 @@ Example:
 
 I'll create a collection titled "Candies" and the description will be "List of candies that I've tried, plan to try, how good they taste, and how much they cost."
 
+## Rename a collection
+
+Open the collection, select "Edit Fields," then edit the collection name or description in the Collection section. Renaming a collection does not change its records.
+
 ## Add fields (parameter)
 
 Once the collection is created, you're taken to the page for that collection, and you'll see a box that says "Fields" and "No fields" and a button that says "edit" on the right. 
@@ -41,7 +45,7 @@ Tastiness (out of ten) - 2
 Within the records tab, there are arrows next to each of your custom fields. By default, all your records are organized in the order that you added them.
 A double-sided arrow next to the field name means that it's not being utilized, but if you click it, it'll turn it into an upwards arrow, and then a downwards arrow, depending on how you want to sort.
 
-As of the current v0.1.0, you can't use multiple of these sorting features at once, and clicking a different arrow will revert the currently used one to doube-sided.
+As of v0.1.1, you can sort by one field at a time. Clicking a different field makes it the active sort.
 
 ### Filtering
 
@@ -51,5 +55,6 @@ The option "Filters" is right above fields, and it's just a ctrl + f feature tha
 
 The top right has "Import CSV" and "Export CSV", which should be pretty self-explanitory. These .csv files are compatible with Excel and Sheets.
 
-As of v0.1.0, there may be issues with imported CSV files, due to a lack of testing anything beyond basic csv files that only have text.
-Don't expect pie charts, bar graphs, or any type of fancy formatting to translate very well (for now).
+Matching CSV headers reuse existing fields, and new headers create text fields. Duplicate headers are kept as separate fields with numbered names.
+
+CSV stores rows and values only. Spreadsheet formatting, charts, formulas, and images are not imported.

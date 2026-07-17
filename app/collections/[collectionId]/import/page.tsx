@@ -47,7 +47,6 @@ export default async function ImportPage({ params }: ImportPageProps) {
           <div className="panel-card">
             <form
               action={importCsv}
-              encType="multipart/form-data"
               className="form-grid"
             >
               <input type="hidden" name="collectionId" value={collectionId} />

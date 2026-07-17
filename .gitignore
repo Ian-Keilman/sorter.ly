@@ -40,3 +40,5 @@ yarn-error.log*
 #extras
 /data/*.db
 /data/*.db-*
+/data/*.dbf
+/data/*.dbf-*

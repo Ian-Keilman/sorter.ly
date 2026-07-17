@@ -2,6 +2,7 @@ import Link from "next/link";
 import { asc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Sidebar from "../../components/Sidebar";
+import ConfirmSubmitButton from "../../components/ConfirmSubmitButton";
 import { deleteCollection } from "../../actions/collections";
 import { deleteRecord } from "../../actions/records";
 import { db } from "../../../db";
@@ -405,9 +406,11 @@ export default async function CollectionPage({
 
             <form action={deleteCollection}>
               <input type="hidden" name="id" value={collection.id} />
-              <button type="submit" className="danger-button">
-                Delete Collection
-              </button>
+              <ConfirmSubmitButton
+                label="Delete Collection"
+                confirmMessage={`Delete "${collection.name}" and all its records? This cannot be undone.`}
+                className="danger-button"
+              />
             </form>
           </div>
         </header>
@@ -688,12 +691,11 @@ export default async function CollectionPage({
                                 name="recordId"
                                 value={record.id}
                               />
-                              <button
-                                type="submit"
+                              <ConfirmSubmitButton
+                                label="Delete"
+                                confirmMessage="Delete this record? This cannot be undone."
                                 className="table-delete-button"
-                              >
-                                Delete
-                              </button>
+                              />
                             </form>
                           </div>
                         </td>

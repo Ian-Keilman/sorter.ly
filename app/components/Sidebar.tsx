@@ -3,6 +3,7 @@ import { asc } from "drizzle-orm";
 import { db } from "../../db";
 import { collections } from "../../db/schema";
 import { deleteCollection } from "../actions/collections";
+import ConfirmSubmitButton from "./ConfirmSubmitButton";
 
 type SidebarProps = {
   activeCollectionId?: string;
@@ -48,14 +49,13 @@ export default async function Sidebar({
 
               <form action={deleteCollection}>
                 <input type="hidden" name="id" value={collection.id} />
-                <button
-                  type="submit"
+                <ConfirmSubmitButton
+                  label="×"
+                  confirmMessage={`Delete "${collection.name}" and all its records? This cannot be undone.`}
                   className="collection-delete"
-                  aria-label={`Delete ${collection.name}`}
+                  ariaLabel={`Delete ${collection.name}`}
                   title={`Delete ${collection.name}`}
-                >
-                  ×
-                </button>
+                />
               </form>
             </div>
           ))

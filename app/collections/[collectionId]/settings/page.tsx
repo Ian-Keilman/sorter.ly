@@ -2,6 +2,7 @@ import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Sidebar from "../../../components/Sidebar";
+import ConfirmSubmitButton from "../../../components/ConfirmSubmitButton";
 
 /* v0.1.1 change here */
 import { updateCollection } from "../../../actions/collections";
@@ -175,9 +176,11 @@ export default async function CollectionSettingsPage({
                         name="collectionId"
                         value={collectionId}
                       />
-                      <button type="submit" className="danger-button">
-                        Delete
-                      </button>
+                      <ConfirmSubmitButton
+                        label="Delete"
+                        confirmMessage={`Delete "${field.name}" and its values from every record? This cannot be undone.`}
+                        className="danger-button"
+                      />
                     </form>
                   </div>
                 ))}
