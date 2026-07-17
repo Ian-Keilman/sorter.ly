@@ -1,6 +1,6 @@
 "use server";
 
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "../../db";
 import { collections, fields } from "../../db/schema";
@@ -46,30 +46,34 @@ export async function createField(formData: FormData) {
     return;
   }
 
-  const existingFields = db
-    .select()
-    .from(fields)
-    .where(eq(fields.collectionId, collectionId))
-    .orderBy(asc(fields.position))
-    .all();
+  db.transaction((tx) => {
+    const existingFields = tx
+      .select()
+      .from(fields)
+      .where(eq(fields.collectionId, collectionId))
+      .orderBy(asc(fields.position))
+      .all();
 
-  const baseKey = keyify(name);
-  const keyAlreadyExists = existingFields.some((field) => field.key === baseKey);
-  const key = keyAlreadyExists
-    ? `${baseKey}_${crypto.randomUUID().slice(0, 6)}`
-    : baseKey;
+    const baseKey = keyify(name);
+    const keyAlreadyExists = existingFields.some(
+      (field) => field.key === baseKey
+    );
+    const key = keyAlreadyExists
+      ? `${baseKey}_${crypto.randomUUID().slice(0, 6)}`
+      : baseKey;
 
-  db.insert(fields)
-    .values({
-      id: crypto.randomUUID(),
-      collectionId,
-      name,
-      key,
-      type: type as "text" | "number" | "date" | "boolean",
-      required,
-      position: existingFields.length,
-    })
-    .run();
+    tx.insert(fields)
+      .values({
+        id: crypto.randomUUID(),
+        collectionId,
+        name,
+        key,
+        type: type as "text" | "number" | "date" | "boolean",
+        required,
+        position: existingFields.length,
+      })
+      .run();
+  });
 
   revalidatePath(`/collections/${collectionId}`);
   revalidatePath(`/collections/${collectionId}/settings`);
@@ -87,21 +91,32 @@ export async function deleteField(formData: FormData) {
     return;
   }
 
-  db.delete(fields).where(eq(fields.id, fieldId)).run();
-
-  const remainingFields = db
-    .select()
-    .from(fields)
-    .where(eq(fields.collectionId, collectionId))
-    .orderBy(asc(fields.position))
-    .all();
-
-  for (let i = 0; i < remainingFields.length; i += 1) {
-    db.update(fields)
-      .set({ position: i })
-      .where(eq(fields.id, remainingFields[i].id))
+  db.transaction((tx) => {
+    tx.delete(fields)
+      .where(
+        and(eq(fields.id, fieldId), eq(fields.collectionId, collectionId))
+      )
       .run();
-  }
+
+    const remainingFields = tx
+      .select()
+      .from(fields)
+      .where(eq(fields.collectionId, collectionId))
+      .orderBy(asc(fields.position))
+      .all();
+
+    for (let i = 0; i < remainingFields.length; i += 1) {
+      tx.update(fields)
+        .set({ position: i })
+        .where(
+          and(
+            eq(fields.id, remainingFields[i].id),
+            eq(fields.collectionId, collectionId)
+          )
+        )
+        .run();
+    }
+  });
 
   revalidatePath(`/collections/${collectionId}`);
   revalidatePath(`/collections/${collectionId}/settings`);

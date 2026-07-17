@@ -1,6 +1,6 @@
 # sorter.ly
 
-**Current version: v0.1.1**
+**Current version: v0.1.2**
 
 ## About
 
@@ -18,6 +18,7 @@ Most tools that do this sort of thing either:
 - require internet access
 - (probably) share your data
 - aren't very customizable
+- slowly turn your personal list of candy into a team productivity platform
 
 This one:
 
@@ -26,7 +27,7 @@ This one:
 - is customizable
 - supports CSV import/export (files often used in Excel and Sheets)
 
-Things like collaboration, storing data in the cloud, and iOS and Android support are currently out of the scope for v0.1.1.
+Things like collaboration, storing data in the cloud, and iOS and Android support are still out of scope for v0.1.2. I want the local version to be dependable before asking it to become a social network.
 
 ## Tech Stack
 
@@ -40,7 +41,16 @@ Things like collaboration, storing data in the cloud, and iOS and Android suppor
 
 - See INSTALLATIONGUIDE.md for instructions on how to install
 - See HOWTOUSE.md for instructions on how to use
-- See ARCHITECTURE.md for the current system design and technical direction
+- See ARCHITECTURE.md if you want to know what is happening under the floorboards
+
+## v0.1.2
+
+- Safer database rules and atomic record/field changes
+- Shared validation for record forms and CSV imports
+- CSV import limits and useful errors instead of silent skipped values
+- Local-only server binding by default
+- Request-time database reads and the first automated test suite
+- Architecture documentation, because "I think this is how it works" is not a long-term strategy
 
 ## v0.1.1
 

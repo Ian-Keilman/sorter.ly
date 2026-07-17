@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { asc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Sidebar from "../../components/Sidebar";
 import ConfirmSubmitButton from "../../components/ConfirmSubmitButton";
 import { deleteCollection } from "../../actions/collections";
@@ -145,6 +146,8 @@ export default async function CollectionPage({
 }: CollectionPageProps) {
   const { collectionId } = await params;
   const rawSearchParams = await searchParams;
+
+  await connection();
 
   const currentParams = new URLSearchParams();
 

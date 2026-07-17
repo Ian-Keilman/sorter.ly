@@ -1,21 +1,23 @@
 import "dotenv/config";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { db, sqlite } from "../db";
-import { collections } from "../db/schema";
 import migrationJournal from "../drizzle/meta/_journal.json";
 
-const rows = db.select().from(collections).all();
+sqlite.pragma("foreign_keys = OFF");
+
+try {
+  migrate(db, { migrationsFolder: "./drizzle" });
+} finally {
+  sqlite.pragma("foreign_keys = ON");
+}
+
 const integrity = sqlite.pragma("integrity_check", { simple: true });
 const foreignKeyIssues = sqlite.pragma("foreign_key_check") as unknown[];
-const migrationTable = sqlite
-  .prepare(
-    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'"
-  )
-  .get();
-const appliedMigrationCount = migrationTable
-  ? (sqlite
-      .prepare("SELECT COUNT(*) AS count FROM __drizzle_migrations")
-      .get() as { count: number }).count
-  : 0;
+const appliedMigrationCount = (
+  sqlite
+    .prepare("SELECT COUNT(*) AS count FROM __drizzle_migrations")
+    .get() as { count: number }
+).count;
 
 if (integrity !== "ok") {
   throw new Error(`Database integrity check failed: ${String(integrity)}`);
@@ -29,15 +31,16 @@ if (foreignKeyIssues.length > 0) {
 
 if (appliedMigrationCount !== migrationJournal.entries.length) {
   throw new Error(
-    `Expected ${migrationJournal.entries.length} applied migration(s), found ${appliedMigrationCount}. Run npm run db:migrate.`
+    `Expected ${migrationJournal.entries.length} applied migration(s), found ${appliedMigrationCount}.`
   );
 }
 
-console.log("Database connection works.");
-console.log("collections rows:", rows.length);
+console.log("Database migrations applied.");
 console.log("integrity check:", integrity);
 console.log("foreign-key issues:", foreignKeyIssues.length);
 console.log(
   "applied migrations:",
   `${appliedMigrationCount}/${migrationJournal.entries.length}`
 );
+
+sqlite.close();

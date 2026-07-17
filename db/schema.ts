@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
+  check,
+  foreignKey,
   index,
   integer,
   real,
@@ -42,6 +44,10 @@ export const fields = sqliteTable(
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
+    idCollectionIdx: uniqueIndex("fields_id_collection_idx").on(
+      table.id,
+      table.collectionId
+    ),
     collectionPositionIdx: index("fields_collection_position_idx").on(
       table.collectionId,
       table.position
@@ -49,6 +55,14 @@ export const fields = sqliteTable(
     collectionKeyIdx: uniqueIndex("fields_collection_key_idx").on(
       table.collectionId,
       table.key
+    ),
+    typeCheck: check(
+      "fields_type_check",
+      sql`${table.type} in ('text', 'number', 'date', 'boolean')`
+    ),
+    requiredCheck: check(
+      "fields_required_check",
+      sql`${table.required} in (0, 1)`
     ),
   })
 );
@@ -65,6 +79,10 @@ export const records = sqliteTable(
   },
   (table) => ({
     collectionIdx: index("records_collection_idx").on(table.collectionId),
+    idCollectionIdx: uniqueIndex("records_id_collection_idx").on(
+      table.id,
+      table.collectionId
+    ),
   })
 );
 
@@ -72,21 +90,36 @@ export const recordValues = sqliteTable(
   "record_values",
   {
     id: text("id").primaryKey(),
-    recordId: text("record_id")
-      .notNull()
-      .references(() => records.id, { onDelete: "cascade" }),
-    fieldId: text("field_id")
-      .notNull()
-      .references(() => fields.id, { onDelete: "cascade" }),
+    collectionId: text("collection_id").notNull(),
+    recordId: text("record_id").notNull(),
+    fieldId: text("field_id").notNull(),
     textValue: text("text_value"),
     numberValue: real("number_value"),
     dateValue: text("date_value"),
     booleanValue: integer("boolean_value", { mode: "boolean" }),
   },
   (table) => ({
+    recordCollectionFk: foreignKey({
+      columns: [table.recordId, table.collectionId],
+      foreignColumns: [records.id, records.collectionId],
+      name: "record_values_record_collection_fk",
+    }).onDelete("cascade"),
+    fieldCollectionFk: foreignKey({
+      columns: [table.fieldId, table.collectionId],
+      foreignColumns: [fields.id, fields.collectionId],
+      name: "record_values_field_collection_fk",
+    }).onDelete("cascade"),
     recordFieldIdx: uniqueIndex("record_values_record_field_idx").on(
       table.recordId,
       table.fieldId
+    ),
+    recordCollectionIdx: index("record_values_record_collection_idx").on(
+      table.recordId,
+      table.collectionId
+    ),
+    fieldCollectionIdx: index("record_values_field_collection_idx").on(
+      table.fieldId,
+      table.collectionId
     ),
     fieldTextIdx: index("record_values_field_text_idx").on(
       table.fieldId,
@@ -103,6 +136,14 @@ export const recordValues = sqliteTable(
     fieldBooleanIdx: index("record_values_field_boolean_idx").on(
       table.fieldId,
       table.booleanValue
+    ),
+    exactlyOneValueCheck: check(
+      "record_values_exactly_one_value_check",
+      sql`((${table.textValue} is not null) + (${table.numberValue} is not null) + (${table.dateValue} is not null) + (${table.booleanValue} is not null)) = 1`
+    ),
+    booleanValueCheck: check(
+      "record_values_boolean_value_check",
+      sql`${table.booleanValue} is null or ${table.booleanValue} in (0, 1)`
     ),
   })
 );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { asc } from "drizzle-orm";
+import { connection } from "next/server";
 import { db } from "../../db";
 import { collections } from "../../db/schema";
 import { deleteCollection } from "../actions/collections";
@@ -12,6 +13,8 @@ type SidebarProps = {
 export default async function Sidebar({
   activeCollectionId,
 }: SidebarProps) {
+  await connection();
+
   const allCollections = db
     .select()
     .from(collections)

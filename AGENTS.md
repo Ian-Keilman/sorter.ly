@@ -1,44 +1,48 @@
-# sorter.ly Development Rules
+# Notes for whoever is working on sorter.ly
 
-This file records the owner's standing instructions for anyone developing sorter.ly.
+This file is mostly for Codex and any future coding assistant so I do not have to explain the entire project ritual every single time.
 
-## Product direction
+## What sorter.ly is supposed to be
 
-- sorter.ly is a local-first customizable collection/database manager.
-- Collections are private by default and contain custom fields and records.
-- Fast sorting, filtering, and CSV import/export are product priorities.
-- Keep the UI minimal, utilitarian, and easy to use.
-- Do not add collaboration or cloud requirements to local mode.
-- Prefer practical, readable code and avoid unnecessary abstraction or dependencies.
-- Preserve the current style and structure unless there is a strong reason to change it.
+- A local-first collection/database manager.
+- Private by default.
+- Customizable without becoming confusing.
+- Fast at sorting, filtering, importing, and exporting.
+- Minimal and utilitarian, but still something that looks like a real product instead of a "please give me an internship" project.
+- Fully useful without an account, internet connection, or cloud subscription politely asking for $14.99 a month.
 
-Read `SCOPE.md` and `ARCHITECTURE.md` thoroughly before planning product or architecture changes.
+Do not turn this into a generic enterprise app. Practical code beats clever code, and a small readable function beats a framework invented specifically for that function.
 
-## Working method
+Read `SCOPE.md` and `ARCHITECTURE.md` before planning anything substantial.
 
-1. Inspect the current code and summarize the architecture before changing it.
-2. Treat the current repository state as the source of truth.
-3. Explain the exact files that will change and why before coding.
-4. Make targeted edits; do not rewrite whole files unless necessary.
-5. Keep naming and product copy consistent with the repository.
-6. Update related create, edit, filter, import, and export flows when a feature affects them.
-7. Update the migration workflow whenever the schema changes.
-8. Test in proportion to risk and preserve existing working features.
-9. After coding, report what changed, how it was tested, and remaining risks.
-10. Ask before making a material product decision that the existing code and documentation do not answer.
+## How I want changes handled
 
-## Version and release protocol
+1. Inspect the current code first. The repository is the source of truth, even if an old chat says something different.
+2. Explain what was found before changing it.
+3. Say exactly which files will change and why.
+4. Make targeted edits. Do not replace an entire file just because replacing it is easier for a robot.
+5. Keep names, UI copy, and comments in the existing sorter.ly style.
+6. If a feature affects create, edit, filter, import, or export, check all of those paths.
+7. If the schema changes, update and test the migration too. The database is not going to migrate itself through positive thinking.
+8. Avoid dependencies unless they clearly earn their place.
+9. Run tests in proportion to the risk, then explain exactly what passed.
+10. Call out architectural problems instead of quietly building more floors on top of them.
+11. Ask before making a product decision that meaningfully changes what sorter.ly is.
 
-Each new version is developed on its own version branch, such as `v0.1.2` or `v0.1.3`.
+## The version ritual (this part is important)
 
-For every release:
+Every release gets its own branch, such as `v0.1.2`, `v0.1.3`, and so on.
 
-1. Start the new version branch from the released `main` branch.
-2. Develop and test the release on that version branch.
-3. Update `HOWTOUSE.md`, `INSTALLATIONGUIDE.md`, `PATCHNOTES.md`, `README.md`, `SCOPE.md`, and `ARCHITECTURE.md` as needed while preserving their existing style and unchanged history.
+For each release:
+
+1. Start the version branch from the released `main` branch.
+2. Build and test the whole release on that branch.
+3. Update `HOWTOUSE.md`, `INSTALLATIONGUIDE.md`, `PATCHNOTES.md`, `README.md`, `SCOPE.md`, and `ARCHITECTURE.md` where needed. Keep the original tone and do not rewrite history for sport.
 4. Commit and push the complete version branch.
-5. Fast-forward `main` to the tested version commit and push it.
-6. Create and push the annotated version tag.
-7. Keep all previous release branches and tags. Never delete, rewrite, or repurpose them.
+5. Fast-forward `main` to the exact tested commit and push it.
+6. Create and push an annotated version tag.
+7. Keep every old release branch and tag. Do not delete, rewrite, recycle, or "clean up" history.
 
-The preserved branch for the original release is `v0.1.0-initial-release`. The v0.1.1 release remains on `v0.1.1`. Their code and documentation are historical snapshots and must remain intact.
+`v0.1.0-initial-release` preserves the original release. `v0.1.1` preserves v0.1.1. They include the code and all the documentation from those points in time, which is the entire reason they exist.
+
+Do not move `main` or create the release tag until the version branch has passed its full release checks. "It probably works" is not a release check.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { asc, eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Sidebar from "../../../../../components/Sidebar";
 import { updateRecord } from "../../../../../actions/records";
 import { db } from "../../../../../../db";
@@ -16,12 +17,23 @@ type EditRecordPageProps = {
     collectionId: string;
     recordId: string;
   }>;
+  searchParams: Promise<{
+    error?: string | string[];
+  }>;
 };
 
 export default async function EditRecordPage({
   params,
+  searchParams,
 }: EditRecordPageProps) {
   const { collectionId, recordId } = await params;
+  const rawSearchParams = await searchParams;
+
+  await connection();
+
+  const error = Array.isArray(rawSearchParams.error)
+    ? rawSearchParams.error[0]
+    : rawSearchParams.error;
 
   const collection = db
     .select()
@@ -110,6 +122,12 @@ export default async function EditRecordPage({
             </div>
           ) : (
             <div className="panel-card">
+              {error === "invalid-values" ? (
+                <p className="form-error" role="alert">
+                  Check the required fields and value types, then try again.
+                </p>
+              ) : null}
+
               <form action={updateRecord} className="form-grid">
                 <input type="hidden" name="collectionId" value={collectionId} />
                 <input type="hidden" name="recordId" value={recordId} />

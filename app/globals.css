@@ -230,6 +230,14 @@ button {
   line-height: 1.5;
 }
 
+.form-error {
+  margin: 0 0 14px;
+  border: 1px solid #991b1b;
+  background: #fef2f2;
+  color: #7f1d1d;
+  padding: 10px 12px;
+}
+
 .empty-sidebar-text {
   color: #6b7280;
   font-size: 0.95rem;

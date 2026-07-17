@@ -6,8 +6,28 @@
 import { asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { parseCsv } from "../../core/csv";
+import { normalizeRecordValues } from "../../core/record-values";
 import { db } from "../../db";
+import { createRecordValueRows } from "../../db/record-values";
 import { collections, fields, records, recordValues } from "../../db/schema";
+
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
+const MAX_CSV_DATA_ROWS = 10_000;
+
+function importErrorPath(
+  collectionId: string,
+  error: string,
+  row?: number
+) {
+  const params = new URLSearchParams({ error });
+
+  if (row !== undefined) {
+    params.set("row", String(row));
+  }
+
+  return `/collections/${collectionId}/import?${params.toString()}`;
+}
 
 function normalizeLabel(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -42,88 +62,6 @@ function getUniqueKey(base: string, usedKeys: Set<string>) {
   return candidate;
 }
 
-function parseBooleanCell(value: string) {
-  const normalized = value.trim().toLowerCase();
-
-  if (["true", "yes", "y", "1"].includes(normalized)) {
-    return true;
-  }
-
-  if (["false", "no", "n", "0"].includes(normalized)) {
-    return false;
-  }
-
-  return null;
-}
-
-function parseCsv(text: string) {
-  const input = text.replace(/^\uFEFF/, "");
-  const rows: string[][] = [];
-
-  let row: string[] = [];
-  let cell = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < input.length; i += 1) {
-    const char = input[i];
-
-    if (inQuotes) {
-      if (char === '"') {
-        if (input[i + 1] === '"') {
-          cell += '"';
-          i += 1;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        cell += char;
-      }
-
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = true;
-      continue;
-    }
-
-    if (char === ",") {
-      row.push(cell);
-      cell = "";
-      continue;
-    }
-
-    if (char === "\n") {
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-
-    if (char === "\r") {
-      if (input[i + 1] === "\n") {
-        i += 1;
-      }
-
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-
-    cell += char;
-  }
-
-  row.push(cell);
-  rows.push(row);
-
-  return rows.filter((currentRow) =>
-    currentRow.some((currentCell) => currentCell.trim() !== "")
-  );
-}
-
 export async function importCsv(formData: FormData) {
   const rawCollectionId = formData.get("collectionId");
   const file = formData.get("file");
@@ -131,8 +69,16 @@ export async function importCsv(formData: FormData) {
   const collectionId =
     typeof rawCollectionId === "string" ? rawCollectionId : "";
 
-  if (!collectionId || !(file instanceof File) || file.size === 0) {
+  if (!collectionId || !(file instanceof File)) {
     return;
+  }
+
+  if (file.size === 0) {
+    redirect(importErrorPath(collectionId, "empty-file"));
+  }
+
+  if (file.size > MAX_CSV_BYTES) {
+    redirect(importErrorPath(collectionId, "file-too-large"));
   }
 
   const collection = db
@@ -146,17 +92,27 @@ export async function importCsv(formData: FormData) {
   }
 
   const csvText = await file.text();
-  const parsedRows = parseCsv(csvText);
+  let parsedRows: string[][];
+
+  try {
+    parsedRows = parseCsv(csvText);
+  } catch {
+    redirect(importErrorPath(collectionId, "invalid-csv"));
+  }
 
   if (parsedRows.length === 0) {
-    return;
+    redirect(importErrorPath(collectionId, "empty-file"));
   }
 
   const rawHeaders = parsedRows[0];
   const dataRows = parsedRows.slice(1);
 
   if (rawHeaders.length === 0 || dataRows.length === 0) {
-    return;
+    redirect(importErrorPath(collectionId, "no-records"));
+  }
+
+  if (dataRows.length > MAX_CSV_DATA_ROWS) {
+    redirect(importErrorPath(collectionId, "too-many-rows"));
   }
 
   const usedHeaderLabels = new Set<string>();
@@ -226,8 +182,15 @@ export async function importCsv(formData: FormData) {
 
   const recordsToInsert: typeof records.$inferInsert[] = [];
   const valuesToInsert: typeof recordValues.$inferInsert[] = [];
+  const validationFields = [...fieldRows, ...newFields].map((field) => ({
+    id: field.id,
+    name: field.name,
+    type: field.type,
+    required: field.required ?? false,
+  }));
 
-  for (const currentRow of dataRows) {
+  for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
+    const currentRow = dataRows[rowIndex];
     const hasAnyData = currentRow.some((cell) => cell.trim() !== "");
 
     if (!hasAnyData) {
@@ -241,64 +204,28 @@ export async function importCsv(formData: FormData) {
       collectionId,
     });
 
+    const rawValueByFieldId = new Map<string, string>();
+
     for (let i = 0; i < headers.length; i += 1) {
       const field = headerFieldMap.get(i);
 
-      if (!field) {
-        continue;
-      }
-
-      const rawCell = currentRow[i] ?? "";
-      const cell = rawCell.trim();
-
-      if (cell === "") {
-        continue;
-      }
-
-      if (field.type === "text") {
-        valuesToInsert.push({
-          id: crypto.randomUUID(),
-          recordId,
-          fieldId: field.id,
-          textValue: cell,
-        });
-      }
-
-      if (field.type === "number") {
-        const parsedNumber = Number(cell);
-
-        if (Number.isFinite(parsedNumber)) {
-          valuesToInsert.push({
-            id: crypto.randomUUID(),
-            recordId,
-            fieldId: field.id,
-            numberValue: parsedNumber,
-          });
-        }
-      }
-
-      if (field.type === "date") {
-        valuesToInsert.push({
-          id: crypto.randomUUID(),
-          recordId,
-          fieldId: field.id,
-          dateValue: cell,
-        });
-      }
-
-      if (field.type === "boolean") {
-        const parsedBoolean = parseBooleanCell(cell);
-
-        if (parsedBoolean !== null) {
-          valuesToInsert.push({
-            id: crypto.randomUUID(),
-            recordId,
-            fieldId: field.id,
-            booleanValue: parsedBoolean,
-          });
-        }
+      if (field) {
+        rawValueByFieldId.set(field.id, currentRow[i] ?? "");
       }
     }
+
+    const normalized = normalizeRecordValues(
+      validationFields,
+      (field) => rawValueByFieldId.get(field.id)
+    );
+
+    if (normalized.issues.length > 0) {
+      redirect(importErrorPath(collectionId, "invalid-values", rowIndex + 2));
+    }
+
+    valuesToInsert.push(
+      ...createRecordValueRows(collectionId, recordId, normalized.values)
+    );
   }
 
   db.transaction((tx) => {

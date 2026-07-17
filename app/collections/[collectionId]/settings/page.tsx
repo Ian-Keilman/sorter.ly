@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Sidebar from "../../../components/Sidebar";
 import ConfirmSubmitButton from "../../../components/ConfirmSubmitButton";
 
@@ -22,6 +23,8 @@ export default async function CollectionSettingsPage({
   params,
 }: CollectionSettingsPageProps) {
   const { collectionId } = await params;
+
+  await connection();
 
   const collection = db
     .select()

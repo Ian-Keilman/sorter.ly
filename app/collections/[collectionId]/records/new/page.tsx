@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Sidebar from "../../../../components/Sidebar";
 import { createRecord } from "../../../../actions/records";
 import { db } from "../../../../../db";
@@ -10,10 +11,23 @@ type NewRecordPageProps = {
   params: Promise<{
     collectionId: string;
   }>;
+  searchParams: Promise<{
+    error?: string | string[];
+  }>;
 };
 
-export default async function NewRecordPage({ params }: NewRecordPageProps) {
+export default async function NewRecordPage({
+  params,
+  searchParams,
+}: NewRecordPageProps) {
   const { collectionId } = await params;
+  const rawSearchParams = await searchParams;
+
+  await connection();
+
+  const error = Array.isArray(rawSearchParams.error)
+    ? rawSearchParams.error[0]
+    : rawSearchParams.error;
 
   const collection = db
     .select()
@@ -66,6 +80,12 @@ export default async function NewRecordPage({ params }: NewRecordPageProps) {
             </div>
           ) : (
             <div className="panel-card">
+              {error === "invalid-values" ? (
+                <p className="form-error" role="alert">
+                  Check the required fields and value types, then try again.
+                </p>
+              ) : null}
+
               <form action={createRecord} className="form-grid">
                 <input type="hidden" name="collectionId" value={collectionId} />
 

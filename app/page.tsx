@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { asc } from "drizzle-orm";
+import { connection } from "next/server";
 import Sidebar from "./components/Sidebar";
 import { createCollection } from "./actions/collections";
 import { db } from "../db";
 import { collections, fields, records } from "../db/schema";
 
-export default function Home() {
+export default async function Home() {
+  await connection();
+
   const allCollections = db
     .select()
     .from(collections)

@@ -2,6 +2,7 @@
 
 
 import { asc, eq, inArray } from "drizzle-orm";
+import { connection } from "next/server";
 import { db } from "../../../../db";
 import {
   collections,
@@ -67,6 +68,8 @@ export async function GET(
   { params }: { params: Promise<{ collectionId: string }> }
 ) {
   const { collectionId } = await params;
+
+  await connection();
 
   const collection = db
     .select()
