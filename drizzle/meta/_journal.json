@@ -15,6 +15,13 @@
       "when": 1784313161358,
       "tag": "0001_foundation_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784423788060,
+      "tag": "0002_ratings_and_defaults",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,16 @@
 # Patch Notes
 
+## v0.1.3
+
+- Added rating fields with a slider and exact number input, using maximums of 5, 10, or 100.
+- Added whole, half, tenth, and hundredth rating precision.
+- Stored ratings in the existing numeric value column with versioned rating settings. The database did not need a special column because a number learned how to dress itself.
+- Added default values for text, number, date, boolean, and rating fields.
+- Applied defaults consistently to new records and blank CSV cells, while leaving existing records alone.
+- Added editable field settings and stopped incompatible rating changes from invalidating stored values.
+- Added database checks for field-configuration JSON and a reviewed v0.1.2-to-v0.1.3 migration.
+- Expanded automated and real-browser testing across ratings, defaults, filtering, editing, CSV import/export, and migration safety.
+
 ## v0.1.2
 
 - Made record creation/editing and field deletion/reordering atomic. Either the whole change works or SQLite puts everything back where it found it.

@@ -1,12 +1,18 @@
-export const fieldTypes = ["text", "number", "date", "boolean"] as const;
+import {
+  type FieldConfiguration,
+  type FieldType,
+  parseFieldConfiguration,
+} from "./field-config";
 
-export type FieldType = (typeof fieldTypes)[number];
+export { fieldTypes, type FieldType } from "./field-config";
 
 export type FieldDefinition = {
   id: string;
   name: string;
   type: FieldType;
   required: boolean;
+  configuration?: string | null;
+  parsedConfiguration?: FieldConfiguration;
 };
 
 export type RawFieldValue = string | boolean | null | undefined;
@@ -15,15 +21,24 @@ export type NormalizedRecordValue =
   | { fieldId: string; type: "text"; value: string }
   | { fieldId: string; type: "number"; value: number }
   | { fieldId: string; type: "date"; value: string }
-  | { fieldId: string; type: "boolean"; value: boolean };
+  | { fieldId: string; type: "boolean"; value: boolean }
+  | { fieldId: string; type: "rating"; value: number };
 
 export type RecordValueIssue = {
   fieldId: string;
   fieldName: string;
-  code: "required" | "invalid_number" | "invalid_date" | "invalid_boolean";
+  code:
+    | "required"
+    | "invalid_number"
+    | "invalid_date"
+    | "invalid_boolean"
+    | "rating_out_of_range"
+    | "invalid_rating_step"
+    | "invalid_configuration";
 };
 
 type NormalizeRecordValuesOptions = {
+  applyDefaults?: boolean;
   emptyBooleanValue?: boolean;
 };
 
@@ -71,6 +86,20 @@ function parseBoolean(value: RawFieldValue) {
   return null;
 }
 
+function isRatingStepAligned(value: number, step: number) {
+  const steps = value / step;
+  return Math.abs(steps - Math.round(steps)) < 1e-9;
+}
+
+export function prepareFieldDefinitions(fields: FieldDefinition[]) {
+  return fields.map((field) => ({
+    ...field,
+    parsedConfiguration:
+      field.parsedConfiguration ??
+      parseFieldConfiguration(field.type, field.configuration),
+  }));
+}
+
 export function normalizeRecordValues(
   fields: FieldDefinition[],
   getRawValue: (field: FieldDefinition) => RawFieldValue,
@@ -80,7 +109,30 @@ export function normalizeRecordValues(
   const issues: RecordValueIssue[] = [];
 
   for (const field of fields) {
-    const rawValue = getRawValue(field);
+    let configuration;
+
+    try {
+      configuration =
+        field.parsedConfiguration ??
+        parseFieldConfiguration(field.type, field.configuration);
+    } catch {
+      issues.push({
+        fieldId: field.id,
+        fieldName: field.name,
+        code: "invalid_configuration",
+      });
+      continue;
+    }
+
+    let rawValue = getRawValue(field);
+
+    if (
+      options.applyDefaults !== false &&
+      isBlank(rawValue) &&
+      configuration.defaultValue !== undefined
+    ) {
+      rawValue = configuration.defaultValue;
+    }
 
     if (field.type === "text") {
       const value = typeof rawValue === "string" ? rawValue.trim() : "";
@@ -125,6 +177,65 @@ export function normalizeRecordValues(
       }
 
       values.push({ fieldId: field.id, type: "number", value: parsed });
+      continue;
+    }
+
+    if (field.type === "rating") {
+      const value = typeof rawValue === "string" ? rawValue.trim() : "";
+
+      if (value === "") {
+        if (field.required) {
+          issues.push({
+            fieldId: field.id,
+            fieldName: field.name,
+            code: "required",
+          });
+        }
+
+        continue;
+      }
+
+      const parsed = Number(value);
+
+      if (!Number.isFinite(parsed)) {
+        issues.push({
+          fieldId: field.id,
+          fieldName: field.name,
+          code: "invalid_number",
+        });
+        continue;
+      }
+
+      const rating = configuration.rating;
+
+      if (!rating) {
+        issues.push({
+          fieldId: field.id,
+          fieldName: field.name,
+          code: "invalid_configuration",
+        });
+        continue;
+      }
+
+      if (parsed < 0 || parsed > rating.maximum) {
+        issues.push({
+          fieldId: field.id,
+          fieldName: field.name,
+          code: "rating_out_of_range",
+        });
+        continue;
+      }
+
+      if (!isRatingStepAligned(parsed, rating.step)) {
+        issues.push({
+          fieldId: field.id,
+          fieldName: field.name,
+          code: "invalid_rating_step",
+        });
+        continue;
+      }
+
+      values.push({ fieldId: field.id, type: "rating", value: parsed });
       continue;
     }
 
@@ -182,4 +293,30 @@ export function normalizeRecordValues(
   }
 
   return { values, issues };
+}
+
+export function validateFieldDefault(field: FieldDefinition) {
+  let configuration;
+
+  try {
+    configuration = parseFieldConfiguration(field.type, field.configuration);
+  } catch {
+    return [
+      {
+        fieldId: field.id,
+        fieldName: field.name,
+        code: "invalid_configuration" as const,
+      },
+    ];
+  }
+
+  if (configuration.defaultValue === undefined) {
+    return [];
+  }
+
+  return normalizeRecordValues(
+    [{ ...field, required: false, parsedConfiguration: configuration }],
+    () => configuration.defaultValue,
+    { applyDefaults: false }
+  ).issues;
 }

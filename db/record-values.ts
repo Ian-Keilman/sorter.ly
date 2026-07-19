@@ -18,7 +18,7 @@ export function createRecordValueRows(
       return { ...base, textValue: value.value };
     }
 
-    if (value.type === "number") {
+    if (value.type === "number" || value.type === "rating") {
       return { ...base, numberValue: value.value };
     }
 

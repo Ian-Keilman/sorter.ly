@@ -8,6 +8,7 @@ import Database from "better-sqlite3";
 const migrationPaths = [
   "drizzle/0000_gray_blackheart.sql",
   "drizzle/0001_foundation_integrity.sql",
+  "drizzle/0002_ratings_and_defaults.sql",
 ];
 
 function readMigration(relativePath: string) {
@@ -79,6 +80,7 @@ test("migrations build a healthy database and preserve v0.1.1 data", () => {
       .run();
 
     applyMigration(temporary.database, 1);
+    applyMigration(temporary.database, 2);
 
     const migratedValue = temporary.database
       .prepare(
@@ -90,6 +92,10 @@ test("migrations build a healthy database and preserve v0.1.1 data", () => {
       collection_id: "c1",
       text_value: "Gumdrops",
     });
+    const migratedField = temporary.database
+      .prepare("SELECT configuration FROM fields WHERE id = 'f1'")
+      .get();
+    assert.deepEqual(migratedField, { configuration: '{"version":1}' });
     assert.equal(temporary.database.pragma("integrity_check", { simple: true }), "ok");
     assert.deepEqual(temporary.database.pragma("foreign_key_check"), []);
   } finally {
@@ -135,6 +141,16 @@ test("the database rejects invalid field and record value states", () => {
     assert.throws(() => {
       insertField(temporary.database, "bad-field", "c1", "mystery");
     }, /fields_type_check/);
+
+    assert.throws(() => {
+      insertField(temporary.database, "bad-rating", "c1", "rating");
+    }, /fields_configuration_check/);
+
+    temporary.database
+      .prepare(
+        "INSERT INTO fields (id, collection_id, name, key, type, configuration, required, position) VALUES ('rating', 'c1', 'Rating', 'rating', 'rating', ?, 0, 1)"
+      )
+      .run('{"version":1,"rating":{"maximum":5,"step":0.1}}');
   } finally {
     temporary.close();
   }

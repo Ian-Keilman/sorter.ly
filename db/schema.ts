@@ -35,8 +35,11 @@ export const fields = sqliteTable(
     name: text("name").notNull(),
     key: text("key").notNull(),
     type: text("type", {
-      enum: ["text", "number", "date", "boolean"],
+      enum: ["text", "number", "date", "boolean", "rating"],
     }).notNull(),
+    configuration: text("configuration")
+      .notNull()
+      .default('{"version":1}'),
     required: integer("required", { mode: "boolean" })
       .notNull()
       .default(false),
@@ -58,7 +61,24 @@ export const fields = sqliteTable(
     ),
     typeCheck: check(
       "fields_type_check",
-      sql`${table.type} in ('text', 'number', 'date', 'boolean')`
+      sql`${table.type} in ('text', 'number', 'date', 'boolean', 'rating')`
+    ),
+    configurationCheck: check(
+      "fields_configuration_check",
+      sql`case when json_valid(${table.configuration}) then (
+        json_type(${table.configuration}) = 'object'
+        and coalesce(json_extract(${table.configuration}, '$.version') = 1, 0)
+        and (json_type(${table.configuration}, '$.defaultValue') is null
+          or json_type(${table.configuration}, '$.defaultValue') = 'text')
+        and coalesce((
+          (${table.type} = 'rating'
+            and json_type(${table.configuration}, '$.rating') = 'object'
+            and json_extract(${table.configuration}, '$.rating.maximum') in (5, 10, 100)
+            and json_extract(${table.configuration}, '$.rating.step') in (1, 0.5, 0.1, 0.01))
+          or (${table.type} != 'rating'
+            and json_type(${table.configuration}, '$.rating') is null)
+        ), 0)
+      ) else 0 end`
     ),
     requiredCheck: check(
       "fields_required_check",

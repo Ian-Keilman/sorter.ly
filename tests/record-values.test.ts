@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   type FieldDefinition,
   normalizeRecordValues,
+  validateFieldDefault,
 } from "../core/record-values";
 
 const fields: FieldDefinition[] = [
@@ -71,4 +72,95 @@ test("can preserve checkbox behavior by treating a missing boolean as false", ()
     values: [{ fieldId: "tried", type: "boolean", value: false }],
     issues: [],
   });
+});
+
+test("applies typed defaults to new and imported records", () => {
+  const defaultFields: FieldDefinition[] = [
+    {
+      id: "title",
+      name: "Title",
+      type: "text",
+      required: false,
+      configuration: '{"version":1,"defaultValue":"Untitled"}',
+    },
+    {
+      id: "tried",
+      name: "Tried",
+      type: "boolean",
+      required: false,
+      configuration: '{"version":1,"defaultValue":"false"}',
+    },
+    {
+      id: "rating",
+      name: "Rating",
+      type: "rating",
+      required: false,
+      configuration:
+        '{"version":1,"defaultValue":"3.5","rating":{"maximum":5,"step":0.5}}',
+    },
+  ];
+
+  const result = normalizeRecordValues(defaultFields, () => "", {
+    applyDefaults: true,
+  });
+
+  assert.deepEqual(result, {
+    values: [
+      { fieldId: "title", type: "text", value: "Untitled" },
+      { fieldId: "tried", type: "boolean", value: false },
+      { fieldId: "rating", type: "rating", value: 3.5 },
+    ],
+    issues: [],
+  });
+
+  assert.deepEqual(
+    normalizeRecordValues(defaultFields, () => "", {
+      applyDefaults: false,
+    }),
+    { values: [], issues: [] }
+  );
+});
+
+test("validates rating ranges and decimal precision", () => {
+  const ratingField: FieldDefinition = {
+    id: "rating",
+    name: "Rating",
+    type: "rating",
+    required: false,
+    configuration:
+      '{"version":1,"rating":{"maximum":10,"step":0.1}}',
+  };
+
+  assert.deepEqual(normalizeRecordValues([ratingField], () => "8.7"), {
+    values: [{ fieldId: "rating", type: "rating", value: 8.7 }],
+    issues: [],
+  });
+  assert.deepEqual(
+    normalizeRecordValues([ratingField], () => "10.1").issues.map(
+      (issue) => issue.code
+    ),
+    ["rating_out_of_range"]
+  );
+  assert.deepEqual(
+    normalizeRecordValues([ratingField], () => "8.75").issues.map(
+      (issue) => issue.code
+    ),
+    ["invalid_rating_step"]
+  );
+});
+
+test("rejects a default that does not fit its field settings", () => {
+  const issues = validateFieldDefault({
+    id: "rating",
+    name: "Rating",
+    type: "rating",
+    required: false,
+    configuration:
+      '{"version":1,"defaultValue":"5.5","rating":{"maximum":5,"step":0.5}}',
+  });
+
+  assert.deepEqual(
+    issues.map((issue) => issue.code),
+    ["rating_out_of_range"]
+  );
 });

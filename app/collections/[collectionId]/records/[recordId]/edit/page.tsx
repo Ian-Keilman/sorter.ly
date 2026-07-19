@@ -3,6 +3,7 @@ import { asc, eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import Sidebar from "../../../../../components/Sidebar";
+import RecordFieldInput from "../../../../../components/RecordFieldInput";
 import { updateRecord } from "../../../../../actions/records";
 import { db } from "../../../../../../db";
 import {
@@ -134,60 +135,21 @@ export default async function EditRecordPage({
 
                 {fieldRows.map((field) => {
                   const value = valueMap.get(field.id);
+                  const initialValue =
+                    field.type === "text"
+                      ? value?.textValue
+                      : field.type === "number" || field.type === "rating"
+                        ? value?.numberValue
+                        : field.type === "date"
+                          ? value?.dateValue
+                          : value?.booleanValue;
 
                   return (
-                    <div key={field.id} className="field-block">
-                      {field.type === "boolean" ? (
-                        <label className="checkbox-row">
-                          <input
-                            type="checkbox"
-                            name={`field_${field.id}`}
-                            defaultChecked={value?.booleanValue === true}
-                          />
-                          <span>{field.name}</span>
-                        </label>
-                      ) : (
-                        <>
-                          <label htmlFor={field.id} className="field-label">
-                            {field.name}
-                          </label>
-
-                          {field.type === "text" ? (
-                            <input
-                              id={field.id}
-                              name={`field_${field.id}`}
-                              type="text"
-                              className="text-input"
-                              defaultValue={value?.textValue ?? ""}
-                              required={field.required}
-                            />
-                          ) : null}
-
-                          {field.type === "number" ? (
-                            <input
-                              id={field.id}
-                              name={`field_${field.id}`}
-                              type="number"
-                              step="any"
-                              className="text-input"
-                              defaultValue={value?.numberValue ?? ""}
-                              required={field.required}
-                            />
-                          ) : null}
-
-                          {field.type === "date" ? (
-                            <input
-                              id={field.id}
-                              name={`field_${field.id}`}
-                              type="date"
-                              className="text-input"
-                              defaultValue={value?.dateValue ?? ""}
-                              required={field.required}
-                            />
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                    <RecordFieldInput
+                      key={field.id}
+                      field={field}
+                      initialValue={initialValue}
+                    />
                   );
                 })}
 

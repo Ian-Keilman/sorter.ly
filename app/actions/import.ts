@@ -7,7 +7,10 @@ import { asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { parseCsv } from "../../core/csv";
-import { normalizeRecordValues } from "../../core/record-values";
+import {
+  normalizeRecordValues,
+  prepareFieldDefinitions,
+} from "../../core/record-values";
 import { db } from "../../db";
 import { createRecordValueRows } from "../../db/record-values";
 import { collections, fields, records, recordValues } from "../../db/schema";
@@ -171,6 +174,7 @@ export async function importCsv(formData: FormData) {
       name: header,
       key: getUniqueKey(headerKey, usedKeys),
       type: "text" as const,
+      configuration: '{"version":1}',
       required: false,
       position: nextPosition,
     };
@@ -182,12 +186,15 @@ export async function importCsv(formData: FormData) {
 
   const recordsToInsert: typeof records.$inferInsert[] = [];
   const valuesToInsert: typeof recordValues.$inferInsert[] = [];
-  const validationFields = [...fieldRows, ...newFields].map((field) => ({
-    id: field.id,
-    name: field.name,
-    type: field.type,
-    required: field.required ?? false,
-  }));
+  const validationFields = prepareFieldDefinitions(
+    [...fieldRows, ...newFields].map((field) => ({
+      id: field.id,
+      name: field.name,
+      type: field.type,
+      configuration: field.configuration,
+      required: field.required ?? false,
+    }))
+  );
 
   for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
     const currentRow = dataRows[rowIndex];
@@ -216,7 +223,8 @@ export async function importCsv(formData: FormData) {
 
     const normalized = normalizeRecordValues(
       validationFields,
-      (field) => rawValueByFieldId.get(field.id)
+      (field) => rawValueByFieldId.get(field.id),
+      { applyDefaults: true }
     );
 
     if (normalized.issues.length > 0) {

@@ -6,6 +6,11 @@ import Sidebar from "../../components/Sidebar";
 import ConfirmSubmitButton from "../../components/ConfirmSubmitButton";
 import { deleteCollection } from "../../actions/collections";
 import { deleteRecord } from "../../actions/records";
+import {
+  type FieldConfiguration,
+  parseFieldConfiguration,
+  type FieldType,
+} from "../../../core/field-config";
 import { db } from "../../../db";
 import {
   collections,
@@ -36,24 +41,34 @@ function getSingleParam(value: string | string[] | undefined) {
   return value;
 }
 
-function formatCellValue(fieldType: string, value: ValueCell | undefined) {
+function formatCellValue(
+  field: { type: FieldType },
+  configuration: FieldConfiguration,
+  value: ValueCell | undefined
+) {
   if (!value) {
     return "";
   }
 
-  if (fieldType === "text") {
+  if (field.type === "text") {
     return value.textValue ?? "";
   }
 
-  if (fieldType === "number") {
+  if (field.type === "number") {
     return value.numberValue !== null ? String(value.numberValue) : "";
   }
 
-  if (fieldType === "date") {
+  if (field.type === "rating") {
+    return value.numberValue !== null && configuration.rating
+      ? `${value.numberValue} / ${configuration.rating.maximum}`
+      : "";
+  }
+
+  if (field.type === "date") {
     return value.dateValue ?? "";
   }
 
-  if (fieldType === "boolean") {
+  if (field.type === "boolean") {
     if (value.booleanValue === true) {
       return "Yes";
     }
@@ -68,7 +83,7 @@ function formatCellValue(fieldType: string, value: ValueCell | undefined) {
   return "";
 }
 
-function getSortableValue(fieldType: string, value: ValueCell | undefined) {
+function getSortableValue(fieldType: FieldType, value: ValueCell | undefined) {
   if (!value) {
     return null;
   }
@@ -78,7 +93,7 @@ function getSortableValue(fieldType: string, value: ValueCell | undefined) {
     return text === "" ? null : text.toLowerCase();
   }
 
-  if (fieldType === "number") {
+  if (fieldType === "number" || fieldType === "rating") {
     return value.numberValue;
   }
 
@@ -196,6 +211,13 @@ export default async function CollectionPage({
     .orderBy(asc(fields.position))
     .all();
 
+  const fieldConfigurations = new Map(
+    fieldRows.map((field) => [
+      field.id,
+      parseFieldConfiguration(field.type, field.configuration),
+    ])
+  );
+
   const recordRows = db
     .select()
     .from(records)
@@ -265,7 +287,7 @@ export default async function CollectionPage({
         }
       }
 
-      if (field.type === "number") {
+      if (field.type === "number" || field.type === "rating") {
         const minText = (currentParams.get(`min_${field.id}`) ?? "").trim();
         const maxText = (currentParams.get(`max_${field.id}`) ?? "").trim();
 
@@ -465,8 +487,11 @@ export default async function CollectionPage({
                 ) : null}
 
                 <div className="filter-grid">
-                  {fieldRows.map((field) => (
-                    <div key={field.id} className="filter-block">
+                  {fieldRows.map((field) => {
+                    const configuration = fieldConfigurations.get(field.id)!;
+
+                    return (
+                      <div key={field.id} className="filter-block">
                       <div className="field-label">{field.name}</div>
 
                       {field.type === "text" ? (
@@ -479,12 +504,14 @@ export default async function CollectionPage({
                         />
                       ) : null}
 
-                      {field.type === "number" ? (
+                      {field.type === "number" || field.type === "rating" ? (
                         <div className="split-inputs">
                           <input
                             name={`min_${field.id}`}
                             type="number"
-                            step="any"
+                            min={field.type === "rating" ? 0 : undefined}
+                            max={configuration.rating?.maximum}
+                            step={configuration.rating?.step ?? "any"}
                             className="text-input"
                             defaultValue={currentParams.get(`min_${field.id}`) ?? ""}
                             placeholder="Min"
@@ -492,7 +519,9 @@ export default async function CollectionPage({
                           <input
                             name={`max_${field.id}`}
                             type="number"
-                            step="any"
+                            min={field.type === "rating" ? 0 : undefined}
+                            max={configuration.rating?.maximum}
+                            step={configuration.rating?.step ?? "any"}
                             className="text-input"
                             defaultValue={currentParams.get(`max_${field.id}`) ?? ""}
                             placeholder="Max"
@@ -528,8 +557,9 @@ export default async function CollectionPage({
                           <option value="false">No</option>
                         </select>
                       ) : null}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="filter-actions">
@@ -669,7 +699,11 @@ export default async function CollectionPage({
 
                           return (
                             <td key={field.id}>
-                              {formatCellValue(field.type, value)}
+                              {formatCellValue(
+                                field,
+                                fieldConfigurations.get(field.id)!,
+                                value
+                              )}
                             </td>
                           );
                         })}

@@ -27,7 +27,7 @@ function getCsvCell(fieldType: string, value: ValueCell | undefined) {
     return value.textValue ?? "";
   }
 
-  if (fieldType === "number") {
+  if (fieldType === "number" || fieldType === "rating") {
     return value.numberValue !== null ? String(value.numberValue) : "";
   }
 

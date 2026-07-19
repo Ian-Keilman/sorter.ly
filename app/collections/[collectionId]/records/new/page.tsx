@@ -3,7 +3,9 @@ import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import Sidebar from "../../../../components/Sidebar";
+import RecordFieldInput from "../../../../components/RecordFieldInput";
 import { createRecord } from "../../../../actions/records";
+import { parseFieldConfiguration } from "../../../../../core/field-config";
 import { db } from "../../../../../db";
 import { collections, fields } from "../../../../../db/schema";
 
@@ -89,53 +91,20 @@ export default async function NewRecordPage({
               <form action={createRecord} className="form-grid">
                 <input type="hidden" name="collectionId" value={collectionId} />
 
-                {fieldRows.map((field) => (
-                  <div key={field.id} className="field-block">
-                    {field.type === "boolean" ? (
-                      <label className="checkbox-row">
-                        <input type="checkbox" name={`field_${field.id}`} />
-                        <span>{field.name}</span>
-                      </label>
-                    ) : (
-                      <>
-                        <label htmlFor={field.id} className="field-label">
-                          {field.name}
-                        </label>
+                {fieldRows.map((field) => {
+                  const configuration = parseFieldConfiguration(
+                    field.type,
+                    field.configuration
+                  );
 
-                        {field.type === "text" ? (
-                          <input
-                            id={field.id}
-                            name={`field_${field.id}`}
-                            type="text"
-                            className="text-input"
-                            required={field.required}
-                          />
-                        ) : null}
-
-                        {field.type === "number" ? (
-                          <input
-                            id={field.id}
-                            name={`field_${field.id}`}
-                            type="number"
-                            step="any"
-                            className="text-input"
-                            required={field.required}
-                          />
-                        ) : null}
-
-                        {field.type === "date" ? (
-                          <input
-                            id={field.id}
-                            name={`field_${field.id}`}
-                            type="date"
-                            className="text-input"
-                            required={field.required}
-                          />
-                        ) : null}
-                      </>
-                    )}
-                  </div>
-                ))}
+                  return (
+                    <RecordFieldInput
+                      key={field.id}
+                      field={field}
+                      initialValue={configuration.defaultValue}
+                    />
+                  );
+                })}
 
                 <div className="button-row">
                   <button type="submit" className="primary-button">

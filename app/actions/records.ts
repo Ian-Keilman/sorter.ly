@@ -12,6 +12,12 @@ function inputName(fieldId: string) {
   return `field_${fieldId}`;
 }
 
+function getFormValue(formData: FormData, fieldId: string) {
+  const values = formData.getAll(inputName(fieldId));
+  const rawValue = values.at(-1);
+  return typeof rawValue === "string" ? rawValue : null;
+}
+
 function recordErrorPath(collectionId: string, path: string) {
   return `/collections/${collectionId}/${path}?error=invalid-values`;
 }
@@ -44,11 +50,8 @@ export async function createRecord(formData: FormData) {
 
   const normalized = normalizeRecordValues(
     fieldRows,
-    (field) => {
-      const rawValue = formData.get(inputName(field.id));
-      return typeof rawValue === "string" ? rawValue : null;
-    },
-    { emptyBooleanValue: false }
+    (field) => getFormValue(formData, field.id),
+    { applyDefaults: true, emptyBooleanValue: false }
   );
 
   if (normalized.issues.length > 0) {
@@ -119,11 +122,8 @@ export async function updateRecord(formData: FormData) {
 
   const normalized = normalizeRecordValues(
     fieldRows,
-    (field) => {
-      const rawValue = formData.get(inputName(field.id));
-      return typeof rawValue === "string" ? rawValue : null;
-    },
-    { emptyBooleanValue: false }
+    (field) => getFormValue(formData, field.id),
+    { applyDefaults: false, emptyBooleanValue: false }
   );
 
   if (normalized.issues.length > 0) {

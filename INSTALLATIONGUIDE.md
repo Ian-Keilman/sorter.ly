@@ -78,7 +78,7 @@ npm install
 npm run db:migrate
 ```
 
-v0.1.2 tests its migration with a v0.1.1-shaped database, but having a backup is still a good habit. Databases are famously bad at accepting apologies.
+v0.1.3 tests its migrations with older database shapes and preserved data, but having a backup is still a good habit. Databases are famously bad at accepting apologies.
 
 ### Optional checks
 

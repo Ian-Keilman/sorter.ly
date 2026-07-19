@@ -20,6 +20,8 @@ This is the current order I want to build things in. It will probably change som
 - Store ratings as numbers with rating-specific settings. I do not want a brand-new database column every time a field gets a nicer outfit.
 - Add default field values, especially for booleans.
 - Make defaults behave the same during manual entry and CSV import.
+- Apply defaults to new records and blank imported cells, without quietly rewriting old records because a setting changed on Tuesday.
+- Reject rating-setting changes that would make existing ratings invalid.
 
 #### v0.1.4 - Duplicates and better importing
 

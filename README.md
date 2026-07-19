@@ -1,6 +1,6 @@
 # sorter.ly
 
-**Current version: v0.1.2**
+**Current version: v0.1.3**
 
 ## About
 
@@ -27,7 +27,7 @@ This one:
 - is customizable
 - supports CSV import/export (files often used in Excel and Sheets)
 
-Things like collaboration, storing data in the cloud, and iOS and Android support are still out of scope for v0.1.2. I want the local version to be dependable before asking it to become a social network.
+Things like collaboration, storing data in the cloud, and iOS and Android support are still out of scope for v0.1.3. I want the local version to be dependable before asking it to become a social network.
 
 ## Tech Stack
 
@@ -42,6 +42,14 @@ Things like collaboration, storing data in the cloud, and iOS and Android suppor
 - See INSTALLATIONGUIDE.md for instructions on how to install
 - See HOWTOUSE.md for instructions on how to use
 - See ARCHITECTURE.md if you want to know what is happening under the floorboards
+
+## v0.1.3
+
+- Rating fields with quick controls out of 5, 10, or 100
+- Whole, half, tenth, and hundredth rating precision
+- Default values for every field type, including booleans that can finally begin life as "Yes"
+- The same defaults during manual record creation and CSV import
+- Versioned field configuration stored separately from record values, so ratings still use the normal number column instead of demanding custom furniture
 
 ## v0.1.2
 

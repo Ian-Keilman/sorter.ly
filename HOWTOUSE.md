@@ -15,15 +15,19 @@ Open the collection, select "Edit Fields," then edit the collection name or desc
 ## Add fields (parameter)
 
 Once the collection is created, you're taken to the page for that collection, and you'll see a box that says "Fields" and "No fields" and a button that says "edit" on the right. 
-Click on edit to add any type of field of your choice, and choose the field type accordingly. There are four different field types: Text, number, date, and boolean
-In addition, you can set certain fields to be optional, while others are required. As of v0.1.2, required and typed values are checked by the app itself too, rather than just hoping the browser was paying attention.
+Click on edit to add any type of field of your choice, and choose the field type accordingly. There are five different field types: Text, number, date, boolean, and rating.
+In addition, you can set certain fields to be optional, while others are required. Required and typed values are checked by the app itself too, rather than just hoping the browser was paying attention.
+
+Fields can also have default values. A default is prefilled when you create a new record and is used for a blank CSV cell. Changing a default does not rewrite existing records, because settings should not secretly become bulk editing.
+
+Open "Settings" beside a current field to change its default. Rating fields also let you change their maximum and precision there. sorter.ly will refuse a rating-setting change if one of the existing ratings would no longer fit.
 
 Example:
 For my "Candies" collection, my fields would be this:
 - Name of candy (text) (required)
 - Have I tried the candy yet? (boolean) (required)
 - The day that I tried the candy (date) (not a required field)
-- How good candy tastes on a scale of 1-10 (number) (not a required field)
+- How good candy tastes on a scale of 1-10 (rating) (not a required field)
   
 ## Add records (entries)
 
@@ -38,6 +42,12 @@ Already tried - True
 Date tried - 2026-03-22
 
 Tastiness (out of ten) - 2
+
+### Ratings
+
+A rating field uses a slider for quick changes and a number box when you want an exact value. Ratings can be out of 5, 10, or 100, with whole, half, tenth, or hundredth increments.
+
+Ratings can be blank or range from 0 through the field's maximum. Optional ratings also have a "Clear" button. In the collection table, `8.7 / 10` means exactly what it looks like; CSV export keeps the raw value as `8.7` so it can be imported again without bringing the decoration along.
 
 
 ### Sorting
@@ -59,6 +69,6 @@ Matching CSV headers reuse existing fields, and new headers create text fields. 
 
 Imports can be up to 5 MB and 10,000 data rows. Existing number, date, boolean, and required fields are validated before anything is saved. If one row is invalid, nothing is imported, which is much better than receiving 9,999 records and one mystery.
 
-Dates use the `YYYY-MM-DD` format. Boolean CSV values can use true/false, yes/no, y/n, or 1/0.
+Dates use the `YYYY-MM-DD` format. Boolean CSV values can use true/false, yes/no, y/n, or 1/0. Blank cells use that field's default when it has one, including boolean and rating defaults.
 
 CSV stores rows and values only. Spreadsheet formatting, charts, formulas, and images are not imported.
